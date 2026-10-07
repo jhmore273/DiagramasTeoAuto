@@ -1,0 +1,28 @@
+:root { font-family: "Segoe UI", sans-serif; color: #172b42; background: #edf2f7; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 24px; }
+header, main, footer { max-width: 1000px; margin: auto; }
+h1 { margin: 0; font-size: clamp(24px, 4vw, 36px); }
+header p, footer { color: #53657b; }
+#editor { padding: 14px; border: 1px solid #ced9e6; border-radius: 14px; background: #fff; }
+.toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+button { padding: 9px 12px; border: 1px solid #bac9db; border-radius: 7px; color: #172b42; background: #f5f8fc; cursor: pointer; font: inherit; }
+button:hover { background: #e3edfa; }
+button:focus-visible, canvas:focus-visible, #viewport:focus-visible { outline: 3px solid #337fe2; outline-offset: 2px; }
+#large { color: white; background: #245ec7; }
+.exports { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+#status, .hint { font-size: 13px; color: #53657b; margin: 10px 0; }
+#viewport { width: min(100%, 802px); height: 602px; max-height: 70vh; overflow: auto; border: 1px solid #bac9db; margin: auto; background: white; }
+canvas { display: block; border: 0; background: white; }
+textarea { display: none; width: 100%; height: 180px; margin-top: 12px; font-family: monospace; }
+details { margin: 22px 0; line-height: 1.7; }
+summary { font-weight: 600; cursor: pointer; }
+footer { margin-top: 20px; font-size: 13px; }
+body.expanded { padding: 12px; }
+body.expanded main { max-width: none; }
+body.expanded header, body.expanded details, body.expanded footer { display: none; }
+body.expanded #editor { height: calc(100dvh - 24px); display: flex; flex-direction: column; }
+body.expanded #viewport, #editor:fullscreen #viewport { flex: 1; min-height: 0; max-height: none; width: 100%; height: auto; }
+#editor:fullscreen { width: 100%; height: 100%; border: 0; border-radius: 0; display: flex; flex-direction: column; }
+#editor:fullscreen textarea, body.expanded textarea { max-height: 20vh; flex-shrink: 0; }
+@media (max-width: 600px) { body { padding: 10px; } button { font-size: 13px; } .hint { line-height: 1.5; } }

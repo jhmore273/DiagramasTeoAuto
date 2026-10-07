@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diagramas de Teoría de Autómatas</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="fsm.js" defer></script>
+  <script src="workspace.js" defer></script>
+</head>
+<body>
+  <header><h1>Diagramas de Teoría de Autómatas</h1><p>Finite State Machine Designer · tu espacio para diseñar autómatas</p></header>
+  <main>
+    <section id="editor" aria-label="Diseñador de autómatas">
+      <nav class="toolbar" aria-label="Herramientas del lienzo">
+        <button id="large" aria-pressed="false">Ampliar lienzo</button>
+        <button id="normal">Tamaño normal</button>
+        <button id="fullscreen" aria-pressed="false">Pantalla completa</button>
+        <span class="exports">Exportar: <button id="png">PNG</button><button id="svg">SVG</button><button id="latex">LaTeX</button></span>
+      </nav>
+      <p id="status" role="status">Lienzo normal · 800 × 600</p>
+      <div id="viewport" tabindex="0" aria-label="Área desplazable del lienzo">
+        <canvas id="canvas" width="800" height="600" tabindex="0" aria-label="Lienzo: doble clic para crear estados; Shift y arrastrar para transiciones">Tu navegador necesita soporte para canvas.</canvas>
+      </div>
+      <label id="output-label" for="output" hidden>Resultado de la exportación</label>
+      <textarea id="output" aria-label="Resultado de la exportación" spellcheck="false"></textarea>
+      <p class="hint">Doble clic: estado · Shift + arrastrar: transición · Selecciona y escribe: etiqueta · Supr: eliminar</p>
+    </section>
+    <details open><summary>Cómo usar el diseñador</summary>
+      <ul>
+        <li>Crea estados con doble clic. Doble clic sobre un estado lo marca como estado de aceptación.</li>
+        <li>Mantén Shift y arrastra entre estados para crear una transición. Desde un espacio vacío hacia un estado crea la flecha inicial; vuelve al mismo estado para un bucle.</li>
+        <li>Arrastra estados y transiciones para moverlos. Selecciona un elemento y escribe su etiqueta; usa Retroceso para corregir y Supr para eliminar.</li>
+        <li>Escribe S_0 para un subíndice o \beta para una letra griega.</li>
+        <li>Amplía el lienzo a por lo menos 2400 × 1600. Usa las barras de desplazamiento para recorrerlo. La vista se adapta a la ventana; el diagrama conserva sus coordenadas.</li>
+        <li>Tamaño normal restaura la vista de 800 × 600. Las zonas adicionales siguen disponibles mediante desplazamiento. Esc sale de pantalla completa.</li>
+        <li>El diagrama se guarda automáticamente en este navegador. PNG descarga una imagen; SVG y LaTeX muestran el texto para copiarlo.</li>
+      </ul>
+    </details>
+  </main>
+  <footer>Basado en <a href="https://github.com/evanw/fsm">Finite State Machine Designer</a>, creado por Evan Wallace. Licencia MIT.</footer>
+</body>
+</html>
