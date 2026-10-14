@@ -1,11 +1,14 @@
 function restoreBackup() {
-	if(!localStorage || !JSON) {
-		return;
-	}
+ try { var backup = JSON.parse(localStorage.getItem('fsm')); if (backup) restoreDiagramState(backup); } catch (error) { /* Leave original backup untouched. */ }
+}
 
-	try {
-		var backup = JSON.parse(localStorage['fsm']);
-
+function restoreDiagramState(backup) {
+ nodes = [];
+ links = [];
+ selectedObject = null;
+ currentLink = null;
+ movingObject = false;
+ shift = false;
 		for(var i = 0; i < backup.nodes.length; i++) {
 			var backupNode = backup.nodes[i];
 			var node = new Node(backupNode.x, backupNode.y);
@@ -33,19 +36,13 @@ function restoreBackup() {
 				link.lineAngleAdjust = backupLink.lineAngleAdjust;
 			}
 			if(link != null) {
+				link.textBelow = backupLink.textBelow === true;
 				links.push(link);
 			}
 		}
-	} catch(e) {
-		localStorage['fsm'] = '';
-	}
 }
 
-function saveBackup() {
-	if(!localStorage || !JSON) {
-		return;
-	}
-
+function getDiagramState() {
 	var backup = {
 		'nodes': [],
 		'links': [],
@@ -90,9 +87,14 @@ function saveBackup() {
 			};
 		}
 		if(backupLink != null) {
+			backupLink.textBelow = link.textBelow === true;
 			backup.links.push(backupLink);
 		}
 	}
 
-	localStorage['fsm'] = JSON.stringify(backup);
+ return backup;
+}
+
+function saveBackup() {
+ try { localStorage.setItem('fsm', JSON.stringify(getDiagramState())); } catch (error) { /* Saved-canvas UI reports persistence failures. */ }
 }

@@ -1,5 +1,8 @@
 // draw using this instead of a canvas and call toLaTeX() afterward
 function ExportAsLaTeX() {
+	this.fillCircle = function(x, y, radius, color) {
+		this._texData += '\\fill [' + color + '] (' + fixed(x * this._scale, 3) + ',' + fixed(-y * this._scale, 3) + ') circle (' + fixed(radius * this._scale, 3) + ');\n';
+	};
 	this._points = [];
 	this._texData = '';
 	this._scale = 0.1; // to convert pixels to document space (TikZ breaks if the numbers get too big, above 500?)
@@ -76,7 +79,7 @@ function ExportAsLaTeX() {
 	};
 	this.measureText = function(text) {
 		var c = canvas.getContext('2d');
-		c.font = '20px "Times New Romain", serif';
+		c.font = '20px "Bahnschrift", "Segoe UI", sans-serif';
 		return c.measureText(text);
 	};
 	this.advancedFillText = function(text, originalText, x, y, angleOrNull) {

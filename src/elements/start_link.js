@@ -45,7 +45,7 @@ StartLink.prototype.draw = function(c) {
 
 	// draw the text at the end without the arrow
 	var textAngle = Math.atan2(stuff.startY - stuff.endY, stuff.startX - stuff.endX);
-	drawText(c, this.text, stuff.startX, stuff.startY, textAngle, selectedObject == this);
+	drawText(c, this.text, stuff.startX, stuff.startY, textAngle, selectedObject == this, this.textBelow);
 
 	// draw the head of the arrow
 	drawArrow(c, stuff.endX, stuff.endY, Math.atan2(-this.deltaY, -this.deltaX));

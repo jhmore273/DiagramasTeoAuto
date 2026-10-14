@@ -1,5 +1,8 @@
 // draw using this instead of a canvas and call toSVG() afterward
 function ExportAsSVG() {
+	this.fillCircle = function(x, y, radius, color) {
+		this._svgData += '\t<circle cx="' + fixed(x + this._transX, 3) + '" cy="' + fixed(y + this._transY, 3) + '" r="' + fixed(radius, 3) + '" fill="' + color + '"/>\n';
+	};
 	this.fillStyle = 'black';
 	this.strokeStyle = 'black';
 	this.lineWidth = 1;
@@ -74,14 +77,14 @@ function ExportAsSVG() {
 	};
 	this.measureText = function(text) {
 		var c = canvas.getContext('2d');
-		c.font = '20px "Times New Romain", serif';
+		c.font = '20px "Bahnschrift", "Segoe UI", sans-serif';
 		return c.measureText(text);
 	};
 	this.fillText = function(text, x, y) {
 		x += this._transX;
 		y += this._transY;
 		if(text.replace(' ', '').length > 0) {
-			this._svgData += '\t<text x="' + fixed(x, 3) + '" y="' + fixed(y, 3) + '" font-family="Times New Roman" font-size="20">' + textToXML(text) + '</text>\n';
+			this._svgData += '\t<text x="' + fixed(x, 3) + '" y="' + fixed(y, 3) + '" font-family="Bahnschrift, Segoe UI, sans-serif" font-size="20">' + textToXML(text) + '</text>\n';
 		}
 	};
 	this.translate = function(x, y) {

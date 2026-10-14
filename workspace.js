@@ -63,6 +63,21 @@ window.addEventListener('load', function () {
   window.addEventListener('resize', resize);
   new ResizeObserver(resize).observe(viewport);
   document.getElementById('png').onclick = saveAsPNG;
+  document.getElementById('clear-all').onclick = function () {
+    if (!window.confirm('¿Borrar todo el diagrama de este lienzo?\n\nSe eliminarán sus estados y transiciones. Puedes recuperarlos con Deshacer durante esta sesión. Los demás lienzos se conservarán.')) return;
+    nodes = [];
+    links = [];
+    selectedObject = null;
+    currentLink = null;
+    movingObject = false;
+    shift = false;
+    clearInterval(caretTimer);
+    document.getElementById('output').value = '';
+    document.getElementById('output').style.display = 'none';
+    document.getElementById('output-label').hidden = true;
+    draw();
+    canvas.focus({preventScroll: true});
+  };
   document.getElementById('svg').onclick = function () { saveAsSVG(); document.getElementById('output-label').hidden = false; };
   document.getElementById('latex').onclick = function () { saveAsLaTeX(); document.getElementById('output-label').hidden = false; };
   resize();

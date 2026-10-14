@@ -4,18 +4,28 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Diagramas de Teoría de Autómatas</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="fsm.js" defer></script>
-  <script src="workspace.js" defer></script>
+  <link rel="stylesheet" href="style.css?v=20261013-pages">
+  <script src="fsm.js?v=20261013-pages" defer></script>
+  <script src="workspace.js?v=20261013-pages" defer></script>
+  <script src="notebooks.js?v=20261013-pages" defer></script>
 </head>
 <body>
   <header><h1>Diagramas de Teoría de Autómatas</h1><p>Finite State Machine Designer · tu espacio para diseñar autómatas</p></header>
   <main>
     <section id="editor" aria-label="Diseñador de autómatas">
+      <aside class="notebooks" aria-label="Lienzos guardados">
+        <div class="notebooks-heading"><span>LIENZOS</span><button id="new-canvas">+ Nuevo</button></div>
+        <nav id="canvas-list" aria-label="Abrir un lienzo guardado"></nav>
+        <span id="save-status" role="status">Guardado automático</span>
+      </aside>
+      <div class="editor-content">
       <nav class="toolbar" aria-label="Herramientas del lienzo">
         <button id="large" aria-pressed="false">Ampliar lienzo</button>
         <button id="normal">Tamaño normal</button>
         <button id="fullscreen" aria-pressed="false">Pantalla completa</button>
+        <button id="undo" disabled title="Deshacer (Ctrl + Z)">Deshacer</button>
+        <button id="label-side" disabled title="Selecciona una flecha y pulsa Alt + L">Texto arriba/abajo</button>
+        <button id="clear-all">Borrar todo</button>
         <span class="exports">Exportar: <button id="png">PNG</button><button id="svg">SVG</button><button id="latex">LaTeX</button></span>
       </nav>
       <p id="status" role="status">Lienzo normal · 800 × 600</p>
@@ -25,16 +35,28 @@
       <label id="output-label" for="output" hidden>Resultado de la exportación</label>
       <textarea id="output" aria-label="Resultado de la exportación" spellcheck="false"></textarea>
       <p class="hint">Doble clic: estado · Shift + arrastrar: transición · Selecciona y escribe: etiqueta · Supr: eliminar</p>
+      <dialog id="name-dialog" aria-labelledby="name-title">
+        <form method="dialog">
+          <h2 id="name-title">Nombre del lienzo</h2>
+          <label for="canvas-name">Nombre</label>
+          <input id="canvas-name" maxlength="80" required autocomplete="off">
+          <div class="dialog-actions"><button id="cancel-name" type="button">Cancelar</button><button value="save">Guardar</button></div>
+        </form>
+      </dialog>
+      </div>
     </section>
     <details open><summary>Cómo usar el diseñador</summary>
       <ul>
         <li>Crea estados con doble clic. Doble clic sobre un estado lo marca como estado de aceptación.</li>
         <li>Mantén Shift y arrastra entre estados para crear una transición. Desde un espacio vacío hacia un estado crea la flecha inicial; vuelve al mismo estado para un bucle.</li>
-        <li>Arrastra estados y transiciones para moverlos. Selecciona un elemento y escribe su etiqueta; usa Retroceso para corregir y Supr para eliminar.</li>
-        <li>Escribe S_0 para un subíndice o \beta para una letra griega.</li>
+        <li>Arrastra estados y transiciones para moverlos. Selecciona un elemento y escribe su etiqueta; usa Retroceso para corregir. Cuando la etiqueta esté vacía, otra pulsación de Retroceso elimina el estado o la flecha seleccionada. Al borrar un estado también se eliminan sus transiciones. Supr elimina directamente el elemento seleccionado.</li>
+        <li>Escribe S_0 para un subíndice. Usa /lambda → λ, /epsilon → ε, /beta → β o /Delta → Δ para letras griegas. También funcionan los atajos con barra invertida, como \lambda.</li>
         <li>Amplía el lienzo a por lo menos 2400 × 1600. Usa las barras de desplazamiento para recorrerlo. La vista se adapta a la ventana; el diagrama conserva sus coordenadas.</li>
         <li>Tamaño normal restaura la vista de 800 × 600. Las zonas adicionales siguen disponibles mediante desplazamiento. Esc sale de pantalla completa.</li>
-        <li>El diagrama se guarda automáticamente en este navegador. PNG descarga una imagen; SVG y LaTeX muestran el texto para copiarlo.</li>
+        <li>Selecciona una flecha y pulsa Alt + L o Texto arriba/abajo para alternar su etiqueta de lado. En el navegador, Ctrl + L abre la barra de direcciones. Enter crea una nueva línea en la etiqueta.</li>
+        <li>Ctrl + Z o Deshacer revierte la última edición, incluido Borrar todo. Cada lienzo tiene su propio historial durante la sesión.</li>
+        <li>+ Nuevo crea otro diagrama. El panel lateral muestra tus lienzos guardados; pulsa un nombre para abrirlo, el lápiz para renombrarlo o × para borrarlo con confirmación. Todos se guardan automáticamente en este equipo.</li>
+        <li>Los lienzos se guardan en este navegador y equipo. No se comparten entre personas ni se sincronizan con la aplicación de escritorio. Al borrar los datos del sitio se eliminan sus lienzos guardados. PNG, SVG y LaTeX descargan archivos con el nombre del lienzo, por ejemplo Diagrama_Tarea8_Problema1.png, .svg o .tex. SVG y LaTeX también muestran el texto para copiarlo.</li>
       </ul>
     </details>
   </main>

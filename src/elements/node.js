@@ -21,6 +21,15 @@ Node.prototype.draw = function(c) {
 	// draw the circle
 	c.beginPath();
 	c.arc(this.x, this.y, nodeRadius, 0, 2 * Math.PI, false);
+	// White drawing fill becomes solid black in the dark canvas view.
+	if(c.canvas) {
+		var previousFill = c.fillStyle;
+		c.fillStyle = 'white';
+		c.fill();
+		c.fillStyle = previousFill;
+	} else if(c.fillCircle) {
+		c.fillCircle(this.x, this.y, nodeRadius, 'white');
+	}
 	c.stroke();
 
 	// draw the text
