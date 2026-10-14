@@ -23,6 +23,12 @@ header p, footer { color: #a8a8a8; }
 .canvas-row.active .canvas-action:hover { background: #00000015; }
 .canvas-row .canvas-delete:hover { color: #e15151; }
 #save-status { font-size: 11px; color: #999; }
+.library-tools { display: flex; flex-wrap: wrap; gap: 5px; }
+.library-tools button { padding: 6px 7px; font-size: 11px; }
+#folder-path { display: flex; flex-wrap: wrap; gap: 3px; font-size: 11px; }
+#folder-path button { background: transparent; border: 0; padding: 3px; font-size: 11px; color: #bbb; }
+.folder-row { color: #d4d4d4; }
+dialog select { width: 100%; margin: 12px 0 20px; background: #191919; color: white; padding: 10px; }
 dialog { border: 1px solid #373737; border-radius: 12px; background: #000000; color: #ededed; padding: 24px; width: min(400px, 90vw); }
 dialog::backdrop { background: #0009; }
 dialog h2 { margin-top: 0; }

@@ -1066,16 +1066,16 @@ function output(text) {
 
 function getExportFilename(extension) {
 	var label = document.querySelector('.canvas-row.active .canvas-open');
-	var name = label ? label.textContent : 'Lienzo';
+	var name = window.getActiveCanvasName ? window.getActiveCanvasName() : (label ? label.textContent : 'Lienzo');
 	name = name.trim().replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^[._]+|[._]+$/g, '').slice(0, 120) || 'Lienzo';
 	return (/^Diagrama_/i.test(name) ? name : 'Diagrama_' + name) + '.' + extension;
 }
 
-function downloadExport(text, mime, extension) {
+function downloadExport(text, mime, extension, filename) {
 	var url = URL.createObjectURL(new Blob([text], {type: mime}));
 	var download = document.createElement('a');
 	download.href = url;
-	download.download = getExportFilename(extension);
+	download.download = filename || getExportFilename(extension);
 	download.click();
 	setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
 }

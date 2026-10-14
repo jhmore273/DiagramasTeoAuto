@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Diagramas de Teoría de Autómatas</title>
-  <link rel="stylesheet" href="style.css?v=20261013-cursor">
-  <script src="fsm.js?v=20261013-cursor" defer></script>
-  <script src="workspace.js?v=20261013-cursor" defer></script>
-  <script src="notebooks.js?v=20261013-cursor" defer></script>
+  <link rel="stylesheet" href="style.css?v=20261013-json-folders">
+  <script src="fsm.js?v=20261013-json-folders" defer></script>
+  <script src="workspace.js?v=20261013-json-folders" defer></script>
+  <script src="notebooks.js?v=20261013-json-folders" defer></script>
 </head>
 <body>
   <header><h1>Diagramas de Teoría de Autómatas</h1><p>Finite State Machine Designer · tu espacio para diseñar autómatas</p></header>
@@ -15,7 +15,11 @@
     <section id="editor" aria-label="Diseñador de autómatas">
       <aside class="notebooks" aria-label="Lienzos guardados">
         <div class="notebooks-heading"><span>LIENZOS</span><button id="new-canvas">+ Nuevo</button></div>
+        <div class="library-tools"><button id="new-folder">+ Carpeta</button><button id="move-canvas">Mover lienzo</button></div>
+        <nav id="folder-path" aria-label="Carpeta actual"></nav>
         <nav id="canvas-list" aria-label="Abrir un lienzo guardado"></nav>
+        <div class="library-tools"><button id="export-library">Exportar todo JSON</button><button id="import-library">Importar JSON</button></div>
+        <input id="import-library-file" type="file" accept=".json,application/json" hidden>
         <span id="save-status" role="status">Guardado automático</span>
       </aside>
       <div class="editor-content">
@@ -43,6 +47,11 @@
           <div class="dialog-actions"><button id="cancel-name" type="button">Cancelar</button><button value="save">Guardar</button></div>
         </form>
       </dialog>
+      <dialog id="move-dialog" aria-labelledby="move-title"><form method="dialog">
+        <h2 id="move-title">Mover lienzo a una carpeta</h2>
+        <label for="move-destination">Destino</label><select id="move-destination"></select>
+        <div class="dialog-actions"><button id="cancel-move" type="button">Cancelar</button><button value="move">Mover</button></div>
+      </form></dialog>
       </div>
     </section>
     <details open><summary>Cómo usar el diseñador</summary>
@@ -56,6 +65,7 @@
         <li>Usa ← y → para mover el cursor dentro de las etiquetas, ↑ y ↓ para cambiar de línea e Inicio/Fin para ir al comienzo o final. Las letras griegas y los subíndices se recorren como un solo símbolo. Escribir o usar Retroceso modifica el texto en esa posición.</li>
         <li>Selecciona una flecha y pulsa Alt + L o Texto arriba/abajo para alternar su etiqueta de lado. En el navegador, Ctrl + L abre la barra de direcciones. Enter crea una nueva línea en la etiqueta.</li>
         <li>Ctrl + Z o Deshacer revierte la última edición, incluido Borrar todo. Cada lienzo tiene su propio historial durante la sesión.</li>
+        <li>Exportar todo JSON guarda todos los lienzos y carpetas en un respaldo editable. Importar JSON añade ese respaldo conservando los lienzos existentes. + Carpeta crea carpetas o subcarpetas; Mover lienzo organiza el diagrama activo en la carpeta elegida.</li>
         <li>+ Nuevo crea otro diagrama. El panel lateral muestra tus lienzos guardados; pulsa un nombre para abrirlo, el lápiz para renombrarlo o × para borrarlo con confirmación. Todos se guardan automáticamente en este equipo.</li>
         <li>Los lienzos se guardan en este navegador y equipo. No se comparten entre personas ni se sincronizan con la aplicación de escritorio. Al borrar los datos del sitio se eliminan sus lienzos guardados. PNG, SVG y LaTeX descargan archivos con el nombre del lienzo, por ejemplo Diagrama_Tarea8_Problema1.png, .svg o .tex. SVG y LaTeX también muestran el texto para copiarlo.</li>
       </ul>
