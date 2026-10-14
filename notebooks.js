@@ -26,6 +26,9 @@ window.addEventListener('load', function () {
   book.items.forEach(function(item) { if(!book.folders.some(function(f) { return f.id === item.folder; })) item.folder = null; });
   var currentFolder = book.items.find(function(item) { return item.id === book.active; }).folder || null;
 
+  var collapsedFolders = new Set(Array.isArray(book.collapsedFolders) ? book.collapsedFolders : []);
+  var draggingCanvasId = null;
+
   function activeItem() { return book.items.find(function(item) { return item.id === book.active; }); }
   function history() { return histories[book.active] || (histories[book.active] = []); }
   function snapshot() { return JSON.stringify(getDiagramState()); }
@@ -38,6 +41,7 @@ window.addEventListener('load', function () {
     item.left = viewport.scrollLeft;
     item.top = viewport.scrollTop;
     try {
+      book.collapsedFolders = Array.from(collapsedFolders);
       localStorage.setItem(storageKey, JSON.stringify(book));
       saveStatus.textContent = 'Guardado en este equipo';
     } catch (error) {
@@ -79,12 +83,24 @@ window.addEventListener('load', function () {
       remove.onclick = function() { deleteItem(item); };
       row.append(open, rename, remove);
 
+    row.draggable = true;
+    row.title = 'Arrastra este lienzo a una carpeta';
+    row.ondragstart = function(event) {
+      if(event.target.closest && event.target.closest('.canvas-action')) { event.preventDefault(); return; }
+      draggingCanvasId = item.id;
+      event.dataTransfer.setData('application/x-diagramasteoauto-canvas', item.id);
+      event.dataTransfer.effectAllowed = 'move';
+      row.classList.add('dragging');
+    };
+    row.ondragend = function() {
+      draggingCanvasId = null;
+      document.querySelectorAll('.dragging, .drop-target').forEach(function(el) { el.classList.remove('dragging', 'drop-target'); });
+    };
     return row;
   }
   function renderPicker() {
     picker.replaceChildren();
     renderFolders();
-    book.items.filter(function(item) { return (item.folder || null) === currentFolder; }).forEach(function(item) { picker.appendChild(canvasRow(item)); });
     undoButton.disabled = !history().length;
   }
   function resetOutput() {
@@ -98,6 +114,7 @@ window.addEventListener('load', function () {
     gestureBefore = null;
     var item = activeItem();
     currentFolder = item.folder || null;
+    expandFolderPath(currentFolder);
     restoreDiagramState(item.graph);
     canvas.width = Number.isInteger(item.width) && item.width >= 800 && item.width <= 16384 ? item.width : 800;
     canvas.height = Number.isInteger(item.height) && item.height >= 600 && item.height <= 16384 ? item.height : 600;
@@ -261,39 +278,88 @@ window.addEventListener('load', function () {
     button.onclick = action;
     return button;
   }
+  function expandFolderPath(id) {
+    var visited = new Set();
+    while(id && !visited.has(id)) {
+      visited.add(id); collapsedFolders.delete(id);
+      var folder = book.folders.find(function(f) { return f.id === id; });
+      id = folder ? folder.parent : null;
+    }
+  }
+  function dropTarget(element, folderId) {
+    element.ondragover = function(event) {
+      if(!draggingCanvasId && !Array.from(event.dataTransfer.types).includes('application/x-diagramasteoauto-canvas')) return;
+      event.preventDefault(); event.stopPropagation();
+      event.dataTransfer.dropEffect = 'move';
+      element.classList.add('drop-target');
+    };
+    element.ondragleave = function(event) {
+      if(!event.relatedTarget || !element.contains(event.relatedTarget)) element.classList.remove('drop-target');
+    };
+    element.ondrop = function(event) {
+      event.preventDefault(); event.stopPropagation(); element.classList.remove('drop-target');
+      var id = event.dataTransfer.getData('application/x-diagramasteoauto-canvas') || draggingCanvasId;
+      var item = book.items.find(function(candidate) { return candidate.id === id; });
+      if(!item || folderId && !book.folders.some(function(f) { return f.id === folderId; })) return;
+      persist(); item.folder = folderId; currentFolder = folderId;
+      expandFolderPath(folderId); draggingCanvasId = null;
+      persist(); renderPicker();
+    };
+  }
   function renderFolders() {
     var path = document.getElementById('folder-path');
-    path.replaceChildren(actionButton('Inicio', 'Abrir carpeta principal', function() { currentFolder = null; renderPicker(); }));
-    var ancestors = [], id = currentFolder, visited = new Set();
-    while(id && !visited.has(id)) {
-      visited.add(id);
-      var folder = book.folders.find(function(f) { return f.id === id; });
-      if(!folder) break;
-      ancestors.unshift(folder);
-      id = folder.parent;
+    var home = actionButton('Inicio', 'Carpeta principal: arrastra aquí un lienzo para sacarlo de una carpeta', function() { currentFolder = null; renderPicker(); });
+    dropTarget(home, null);
+    path.replaceChildren(home);
+    if(currentFolder && !book.folders.some(function(f) { return f.id === currentFolder; })) currentFolder = null;
+    if(currentFolder) {
+      var destination = document.createElement('span');
+      destination.textContent = '› ' + folderName(currentFolder);
+      destination.title = 'Destino para nuevos lienzos y carpetas';
+      path.appendChild(destination);
     }
-    ancestors.forEach(function(folder) {
-      path.appendChild(actionButton('› ' + folder.name, folderName(folder.id), function() { currentFolder = folder.id; renderPicker(); }));
-    });
-    book.folders.filter(function(f) { return f.parent === currentFolder; }).forEach(function(folder) {
-      var row = document.createElement('div'); row.className = 'canvas-row folder-row';
-      var open = actionButton('▸ ' + folder.name, 'Abrir carpeta ' + folder.name, function() { currentFolder = folder.id; renderPicker(); });
-      open.className = 'canvas-open';
-      var rename = actionButton('✎', 'Renombrar carpeta ' + folder.name, async function() {
-        var name = await askName('Renombrar carpeta', folder.name);
-        if(name === null || !name.trim()) return;
-        folder.name = name.trim().slice(0, 80); persist(); renderPicker();
-      }); rename.className = 'canvas-action';
-      var remove = actionButton('×', 'Eliminar carpeta ' + folder.name, function() {
-        if(!confirm('¿Eliminar la carpeta "' + folder.name + '"? Sus lienzos y subcarpetas se moverán a la carpeta superior, sin borrarlos.')) return;
-        book.items.forEach(function(item) { if(item.folder === folder.id) item.folder = folder.parent; });
-        book.folders.forEach(function(child) { if(child.parent === folder.id) child.parent = folder.parent; });
-        book.folders = book.folders.filter(function(f) { return f.id !== folder.id; });
-        persist(); renderPicker();
-      }); remove.className = 'canvas-action canvas-delete';
-      row.append(open, rename, remove); picker.appendChild(row);
-    });
+    function branch(parentElement, parentId, visited) {
+      book.folders.filter(function(f) { return f.parent === parentId && !visited.has(f.id); }).forEach(function(folder) {
+        var isOpen = !collapsedFolders.has(folder.id);
+        var row = document.createElement('div');
+        row.className = 'canvas-row folder-row' + (currentFolder === folder.id ? ' folder-selected' : '');
+        var open = actionButton((isOpen ? '▾ ' : '▸ ') + '▱ ' + folder.name, (isOpen ? 'Contraer ' : 'Expandir ') + folder.name, function() {
+          currentFolder = folder.id;
+          if(collapsedFolders.has(folder.id)) collapsedFolders.delete(folder.id); else collapsedFolders.add(folder.id);
+          persist(); renderPicker();
+        });
+        open.className = 'canvas-open';
+        open.setAttribute('aria-expanded', String(isOpen));
+        var rename = actionButton('✎', 'Renombrar carpeta ' + folder.name, async function() {
+          var name = await askName('Renombrar carpeta', folder.name);
+          if(name === null || !name.trim()) return;
+          folder.name = name.trim().slice(0, 80); persist(); renderPicker();
+        }); rename.className = 'canvas-action';
+        var remove = actionButton('×', 'Eliminar carpeta ' + folder.name, function() {
+          if(!confirm('¿Eliminar la carpeta "' + folder.name + '"? Sus lienzos y subcarpetas se moverán a la carpeta superior, sin borrarlos.')) return;
+          book.items.forEach(function(item) { if(item.folder === folder.id) item.folder = folder.parent; });
+          book.folders.forEach(function(child) { if(child.parent === folder.id) child.parent = folder.parent; });
+          book.folders = book.folders.filter(function(f) { return f.id !== folder.id; });
+          if(currentFolder === folder.id) currentFolder = folder.parent;
+          collapsedFolders.delete(folder.id); persist(); renderPicker();
+        }); remove.className = 'canvas-action canvas-delete';
+        row.append(open, rename, remove); dropTarget(row, folder.id); parentElement.appendChild(row);
+        if(isOpen) {
+          var children = document.createElement('div'); children.className = 'folder-children';
+          children.setAttribute('role', 'group'); children.setAttribute('aria-label', 'Contenido de ' + folder.name);
+          var nextVisited = new Set(visited); nextVisited.add(folder.id);
+          branch(children, folder.id, nextVisited);
+          if(!children.childElementCount) {
+            var empty = document.createElement('span'); empty.className = 'folder-empty'; empty.textContent = 'Carpeta vacía'; children.appendChild(empty);
+          }
+          parentElement.appendChild(children);
+        }
+      });
+      book.items.filter(function(item) { return (item.folder || null) === parentId; }).forEach(function(item) { parentElement.appendChild(canvasRow(item)); });
+    }
+    branch(picker, null, new Set());
   }
+
   function cleanGraph(graph) {
     if(!graph || !Array.isArray(graph.nodes) || !Array.isArray(graph.links) || graph.nodes.length > 10000 || graph.links.length > 30000) throw new Error('Diagrama no válido.');
     function number(value, fallback) {
@@ -350,7 +416,7 @@ window.addEventListener('load', function () {
       var name = await askName('Nueva carpeta en ' + (folderName(currentFolder) || 'Inicio'), 'Tarea 7');
       if(name === null || !name.trim()) return;
       var folder = {id: crypto.randomUUID(), name: name.trim().slice(0, 80), parent: currentFolder};
-      book.folders.push(folder); currentFolder = folder.id; persist(); renderPicker();
+      book.folders.push(folder); currentFolder = folder.id; expandFolderPath(currentFolder); persist(); renderPicker();
     };
     document.getElementById('move-canvas').onclick = function() {
       var dialog = document.getElementById('move-dialog'), select = document.getElementById('move-destination');
@@ -361,7 +427,7 @@ window.addEventListener('load', function () {
       select.value = activeItem().folder || '';
       dialog.returnValue = '';
       document.getElementById('cancel-move').onclick = function() { dialog.close('cancel'); };
-      dialog.onclose = function() { if(dialog.returnValue === 'move') { activeItem().folder = select.value || null; currentFolder = activeItem().folder; persist(); renderPicker(); } };
+      dialog.onclose = function() { if(dialog.returnValue === 'move') { activeItem().folder = select.value || null; currentFolder = activeItem().folder; expandFolderPath(currentFolder); persist(); renderPicker(); } };
       dialog.showModal();
     };
     document.getElementById('export-library').onclick = function() {
