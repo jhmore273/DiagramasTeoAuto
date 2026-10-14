@@ -13,9 +13,9 @@ header p, footer { color: #a8a8a8; }
 #new-canvas { padding: 6px 10px; font-size: 12px; color: #111; background: #e9e9e9; border: 0; }
 #canvas-list { overflow-y: auto; min-height: 0; }
 .canvas-row { display: flex; align-items: center; min-height: 36px; margin: 3px 0; border-radius: 7px; }
-.canvas-row:hover { background: #282828; }
 .canvas-row.active { background: #e8e8e8; color: #111; }
 .canvas-row button { background: transparent; border: 0; border-radius: 6px; color: inherit; }
+.canvas-row .canvas-open:hover { background: transparent; color: inherit; }
 .canvas-open { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 8px 9px; font-size: 13px; }
 .canvas-action { flex-shrink: 0; padding: 5px; width: 25px; font-size: 16px; opacity: .25; }
 .canvas-row:hover .canvas-action, .canvas-row.active .canvas-action, .canvas-row:focus-within .canvas-action { opacity: .7; }
