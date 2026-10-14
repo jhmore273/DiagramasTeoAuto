@@ -51,7 +51,10 @@ function canvasHasFocus() {
 }
 
 function drawText(c, originalText, x, y, angleOrNull, isSelected, textBelow) {
- var originals = normalizeGreekShortcuts(originalText).split('\n');
+ var rawLines = originalText.split('\n');
+ var originals = rawLines.map(normalizeGreekShortcuts);
+ var caret = isSelected ? getLabelCaret() : -1;
+ var lineStart = 0;
  var lines = originals.map(convertLatexShortcuts);
  var lineHeight = 24;
  c.font = '20px "Bahnschrift", "Segoe UI", sans-serif';
@@ -70,12 +73,98 @@ function drawText(c, originalText, x, y, angleOrNull, isSelected, textBelow) {
    var lineX = Math.round(x - widths[i] / 2);
    lineY = Math.round(lineY);
    c.fillText(lines[i], lineX, lineY + 6);
-   if(i === lines.length - 1 && isSelected && caretVisible && canvasHasFocus() && document.hasFocus()) {
-    var caretX = lineX + widths[i];
+   if(caret >= lineStart && caret <= lineStart + rawLines[i].length && isSelected && caretVisible && canvasHasFocus() && document.hasFocus()) {
+    var caretX = lineX + c.measureText(convertLatexShortcuts(rawLines[i].slice(0, caret - lineStart))).width;
     c.beginPath();c.moveTo(caretX, lineY - 10);c.lineTo(caretX, lineY + 10);c.stroke();
    }
   }
+  lineStart += rawLines[i].length + 1;
  }
+}
+
+var labelCaretOwner = null;
+var labelCaretIndex = 0;
+var labelPreferredColumn = null;
+
+// Raw shortcut spans correspond to single visible Greek letters or subscripts.
+function labelTextTokens(value) {
+ var names = greekLetterNames.concat(greekLetterNames.map(function(name) { return name.toLowerCase(); }));
+ var shortcut = new RegExp('^(?:\\\\(?:' + names.join('|') + ')|/(?:' + names.join('|') + ')(?![A-Za-z])|_[0-9])');
+ var tokens = [];
+ for(var start = 0; start < value.length;) {
+  var remaining = value.slice(start);
+  var match = remaining.match(shortcut);
+  var length = match ? match[0].length : String.fromCodePoint(value.codePointAt(start)).length;
+  tokens.push({start: start, end: start + length});
+  start += length;
+ }
+ return tokens;
+}
+
+function getLabelCaret() {
+ if(!selectedObject || !('text' in selectedObject)) return 0;
+ if(labelCaretOwner !== selectedObject) {
+  labelCaretOwner = selectedObject;
+  labelCaretIndex = selectedObject.text.length;
+  labelPreferredColumn = null;
+ }
+ labelCaretIndex = Math.min(Math.max(0, labelCaretIndex), selectedObject.text.length);
+ labelTextTokens(selectedObject.text).forEach(function(token) {
+  if(labelCaretIndex > token.start && labelCaretIndex < token.end) labelCaretIndex = token.end;
+ });
+ return labelCaretIndex;
+}
+
+function insertLabelText(value) {
+ var index = getLabelCaret();
+ selectedObject.text = selectedObject.text.slice(0, index) + value + selectedObject.text.slice(index);
+ labelCaretIndex = index + value.length;
+ labelPreferredColumn = null;
+ getLabelCaret();
+}
+
+function eraseBeforeCaret() {
+ var index = getLabelCaret();
+ var tokens = labelTextTokens(selectedObject.text);
+ var previous = tokens.filter(function(token) { return token.end <= index; }).pop();
+ if(previous) {
+  selectedObject.text = selectedObject.text.slice(0, previous.start) + selectedObject.text.slice(index);
+  labelCaretIndex = previous.start;
+ }
+ labelPreferredColumn = null;
+}
+
+function moveLabelCaret(key, wholeText) {
+ var index = getLabelCaret();
+ var text = selectedObject.text;
+ var tokens = labelTextTokens(text);
+ if(key === 37 || key === 39) {
+  if(key === 37) {
+   var previous = tokens.filter(function(token) { return token.end <= index; }).pop();
+   labelCaretIndex = previous ? previous.start : 0;
+  } else {
+   var next = tokens.find(function(token) { return token.start >= index; });
+   labelCaretIndex = next ? next.end : text.length;
+  }
+  labelPreferredColumn = null;
+  return;
+ }
+ var lines = text.split('\n');
+ var starts = [0];
+ for(var i = 1; i < lines.length; i++) starts[i] = starts[i - 1] + lines[i - 1].length + 1;
+ var row = 0;
+ while(row + 1 < starts.length && starts[row + 1] <= index) row++;
+ if(key === 36 || key === 35) {
+  labelCaretIndex = key === 36 ? (wholeText ? 0 : starts[row]) : (wholeText ? text.length : starts[row] + lines[row].length);
+  labelPreferredColumn = null;
+  return;
+ }
+ var currentTokens = labelTextTokens(lines[row]);
+ if(labelPreferredColumn === null) labelPreferredColumn = currentTokens.filter(function(token) { return token.end <= index - starts[row]; }).length;
+ var targetRow = Math.min(lines.length - 1, Math.max(0, row + (key === 38 ? -1 : 1)));
+ var targetTokens = labelTextTokens(lines[targetRow]);
+ var column = Math.min(labelPreferredColumn, targetTokens.length);
+ labelCaretIndex = starts[targetRow] + (column ? targetTokens[column - 1].end : 0);
 }
 
 var caretTimer;
@@ -292,8 +381,13 @@ document.onkeydown = function(e) {
    draw();
   }
   return false;
+ } else if((key >= 37 && key <= 40 || key == 36 || key == 35) && selectedObject != null && 'text' in selectedObject) {
+  moveLabelCaret(key, e.ctrlKey || e.metaKey);
+  resetCaret();
+  draw();
+  return false;
  } else if(key == 13 && selectedObject != null && 'text' in selectedObject && !(selectedObject instanceof Node)) {
-  selectedObject.text += '\n';
+  insertLabelText('\n');
   resetCaret();
   draw();
   return false;
@@ -303,7 +397,7 @@ document.onkeydown = function(e) {
 				// Require a fresh press after clearing text, rather than key repeat.
 				if(!e.repeat) deleteSelectedObject();
 			} else {
-				selectedObject.text = selectedObject.text.substr(0, selectedObject.text.length - 1);
+				eraseBeforeCaret();
 				resetCaret();
 				draw();
 			}
@@ -330,8 +424,8 @@ document.onkeypress = function(e) {
 	if(!canvasHasFocus()) {
 		// don't read keystrokes when other things have focus
 		return true;
-	} else if(key >= 0x20 && key <= 0x7E && !e.metaKey && !e.altKey && !e.ctrlKey && selectedObject != null && 'text' in selectedObject) {
-		selectedObject.text += String.fromCharCode(key);
+	} else if(key >= 0x20 && !e.metaKey && !e.altKey && !e.ctrlKey && selectedObject != null && 'text' in selectedObject) {
+		insertLabelText(e.key && Array.from(e.key).length === 1 ? e.key : String.fromCharCode(key));
 		resetCaret();
 		draw();
 
