@@ -127,12 +127,12 @@ Link.prototype.draw = function(c) {
 		var textAngle = (startAngle + endAngle) / 2 + stuff.isReversed * Math.PI;
 		var textX = stuff.circleX + stuff.circleRadius * Math.cos(textAngle);
 		var textY = stuff.circleY + stuff.circleRadius * Math.sin(textAngle);
-		drawText(c, this.text, textX, textY, textAngle, selectedObject == this, this.textBelow, textAngle - stuff.reverseScale * Math.PI / 2);
+		drawText(c, this.text, textX, textY, textAngle, selectedObject == this, this.textBelow);
 	} else {
 		var textX = (stuff.startX + stuff.endX) / 2;
 		var textY = (stuff.startY + stuff.endY) / 2;
 		var textAngle = Math.atan2(stuff.endX - stuff.startX, stuff.startY - stuff.endY);
-		drawText(c, this.text, textX, textY, textAngle + this.lineAngleAdjust, selectedObject == this, this.textBelow, Math.atan2(stuff.endY - stuff.startY, stuff.endX - stuff.startX));
+		drawText(c, this.text, textX, textY, textAngle + this.lineAngleAdjust, selectedObject == this, this.textBelow);
 	}
 };
 
@@ -289,7 +289,7 @@ SelfLink.prototype.draw = function(c) {
 	// draw the text on the loop farthest from the node
 	var textX = stuff.circleX + stuff.circleRadius * Math.cos(this.anchorAngle);
 	var textY = stuff.circleY + stuff.circleRadius * Math.sin(this.anchorAngle);
-	drawText(c, this.text, textX, textY, this.anchorAngle, selectedObject == this, this.textBelow, this.anchorAngle + Math.PI / 2);
+	drawText(c, this.text, textX, textY, this.anchorAngle, selectedObject == this, this.textBelow);
 	// draw the head of the arrow
 	drawArrow(c, stuff.endX, stuff.endY, stuff.endAngle + Math.PI * 0.4);
 };
@@ -349,7 +349,7 @@ StartLink.prototype.draw = function(c) {
 
 	// draw the text at the end without the arrow
 	var textAngle = Math.atan2(stuff.endX - stuff.startX, stuff.startY - stuff.endY);
-	drawText(c, this.text, stuff.startX, stuff.startY, textAngle, selectedObject == this, this.textBelow, Math.atan2(stuff.endY - stuff.startY, stuff.endX - stuff.startX));
+	drawText(c, this.text, stuff.startX, stuff.startY, textAngle, selectedObject == this, this.textBelow);
 
 	// draw the head of the arrow
 	drawArrow(c, stuff.endX, stuff.endY, Math.atan2(-this.deltaY, -this.deltaX));
@@ -640,21 +640,7 @@ function canvasHasFocus() {
 	return document.activeElement === canvas || (document.activeElement || document.body) === document.body;
 }
 
-function drawMiniDirection(c, x, y, angle) {
- var dx = Math.cos(angle), dy = Math.sin(angle);
- var tipX = x + dx * 7, tipY = y + dy * 7;
- c.beginPath();
- c.moveTo(x - dx * 7, y - dy * 7);
- c.lineTo(tipX, tipY);
- c.stroke();
- c.beginPath();
- c.moveTo(tipX - dx * 5 - dy * 3, tipY - dy * 5 + dx * 3);
- c.lineTo(tipX, tipY);
- c.lineTo(tipX - dx * 5 + dy * 3, tipY - dy * 5 - dx * 3);
- c.stroke();
-}
-
-function drawText(c, originalText, x, y, angleOrNull, isSelected, textBelow, directionAngle) {
+function drawText(c, originalText, x, y, angleOrNull, isSelected, textBelow) {
  var rawLines = originalText.split('\n');
  var originals = rawLines.map(normalizeGreekShortcuts);
  var caret = isSelected ? getLabelCaret() : -1;
@@ -664,8 +650,6 @@ function drawText(c, originalText, x, y, angleOrNull, isSelected, textBelow, dir
  c.font = '20px "Bahnschrift", "Segoe UI", sans-serif';
  var widths = lines.map(function(line) { return c.measureText(line).width; });
  var width = Math.max.apply(Math, widths);
- var showDirection = directionAngle != null && originalText.trim().length > 0;
- var groupWidth = width + (showDirection ? 28 : 0);
  var halfHeight = 10 + (lines.length - 1) * lineHeight / 2;
  // Offset the entire label perpendicular to the arrow, clear of its line.
  if(angleOrNull != null) {
@@ -676,7 +660,7 @@ function drawText(c, originalText, x, y, angleOrNull, isSelected, textBelow, dir
    normalX = -normalX;
    normalY = -normalY;
   }
-  var distance = Math.abs(normalX) * groupWidth / 2 + Math.abs(normalY) * halfHeight + 8;
+  var distance = Math.abs(normalX) * width / 2 + Math.abs(normalY) * halfHeight + 8;
   var side = textBelow ? -1 : 1;
   x += side * normalX * distance;
   y += side * normalY * distance;
