@@ -27,7 +27,7 @@ window.addEventListener('load', function () {
   var currentFolder = book.items.find(function(item) { return item.id === book.active; }).folder || null;
 
   var collapsedFolders = new Set(Array.isArray(book.collapsedFolders) ? book.collapsedFolders : []);
-  var draggingCanvasId = null;
+  var draggingEntry = null;
 
   function activeItem() { return book.items.find(function(item) { return item.id === book.active; }); }
   function history() { return histories[book.active] || (histories[book.active] = []); }
@@ -83,19 +83,8 @@ window.addEventListener('load', function () {
       remove.onclick = function() { deleteItem(item); };
       row.append(open, rename, remove);
 
-    row.draggable = true;
-    row.title = 'Arrastra este lienzo a una carpeta';
-    row.ondragstart = function(event) {
-      if(event.target.closest && event.target.closest('.canvas-action')) { event.preventDefault(); return; }
-      draggingCanvasId = item.id;
-      event.dataTransfer.setData('application/x-diagramasteoauto-canvas', item.id);
-      event.dataTransfer.effectAllowed = 'move';
-      row.classList.add('dragging');
-    };
-    row.ondragend = function() {
-      draggingCanvasId = null;
-      document.querySelectorAll('.dragging, .drop-target').forEach(function(el) { el.classList.remove('dragging', 'drop-target'); });
-    };
+    row.title = 'Arrastra este lienzo a una carpeta o a Inicio';
+    dragSource(row, open, 'canvas', item.id);
     return row;
   }
   function renderPicker() {
@@ -286,29 +275,77 @@ window.addEventListener('load', function () {
       id = folder ? folder.parent : null;
     }
   }
+  function dragSource(row, handle, kind, id) {
+    row.draggable = true;
+    handle.draggable = true;
+    function start(event) {
+      if(event.target.closest && event.target.closest('.canvas-action')) { event.preventDefault(); return; }
+      event.stopPropagation();
+      draggingEntry = {kind: kind, id: id};
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('application/x-fsm-library-item', JSON.stringify(draggingEntry));
+      event.dataTransfer.setData('text/plain', handle.textContent);
+      row.classList.add('dragging');
+    }
+    function finish() {
+      draggingEntry = null;
+      document.querySelectorAll('.dragging, .drop-target').forEach(function(el) { el.classList.remove('dragging', 'drop-target'); });
+    }
+    row.ondragstart = handle.ondragstart = start;
+    row.ondragend = handle.ondragend = finish;
+  }
+  function validDestination(entry, folderId) {
+    if(!entry || folderId && !book.folders.some(function(folder) { return folder.id === folderId; })) return false;
+    if(entry.kind === 'canvas') return book.items.some(function(item) { return item.id === entry.id; });
+    if(entry.kind !== 'folder' || !book.folders.some(function(folder) { return folder.id === entry.id; })) return false;
+    // A folder must never become its own parent, including through descendants.
+    var id = folderId, visited = new Set();
+    while(id) {
+      if(id === entry.id || visited.has(id)) return false;
+      visited.add(id);
+      var folder = book.folders.find(function(candidate) { return candidate.id === id; });
+      id = folder ? folder.parent : null;
+    }
+    return true;
+  }
   function dropTarget(element, folderId) {
-    element.ondragover = function(event) {
-      if(!draggingCanvasId && !Array.from(event.dataTransfer.types).includes('application/x-diagramasteoauto-canvas')) return;
-      event.preventDefault(); event.stopPropagation();
-      event.dataTransfer.dropEffect = 'move';
+    function over(event) {
+      var types = Array.from(event.dataTransfer.types || []);
+      if(!draggingEntry && !types.includes('application/x-fsm-library-item')) return;
+      event.stopPropagation();
+      if(draggingEntry && !validDestination(draggingEntry, folderId)) {
+        event.dataTransfer.dropEffect = 'none';
+        element.classList.remove('drop-target'); return;
+      }
+      event.preventDefault(); event.dataTransfer.dropEffect = 'move';
       element.classList.add('drop-target');
-    };
+    }
+    element.ondragenter = element.ondragover = over;
     element.ondragleave = function(event) {
       if(!event.relatedTarget || !element.contains(event.relatedTarget)) element.classList.remove('drop-target');
     };
     element.ondrop = function(event) {
-      event.preventDefault(); event.stopPropagation(); element.classList.remove('drop-target');
-      var id = event.dataTransfer.getData('application/x-diagramasteoauto-canvas') || draggingCanvasId;
-      var item = book.items.find(function(candidate) { return candidate.id === id; });
-      if(!item || folderId && !book.folders.some(function(f) { return f.id === folderId; })) return;
-      persist(); item.folder = folderId; currentFolder = folderId;
-      expandFolderPath(folderId); draggingCanvasId = null;
+      event.preventDefault(); event.stopPropagation();
+      document.querySelectorAll('.drop-target, .dragging').forEach(function(el) { el.classList.remove('drop-target', 'dragging'); });
+      var entry = draggingEntry;
+      if(!entry) {
+        try { entry = JSON.parse(event.dataTransfer.getData('application/x-fsm-library-item')); } catch(error) { return; }
+      }
+      if(!validDestination(entry, folderId)) return;
+      persist();
+      if(entry.kind === 'canvas') book.items.find(function(item) { return item.id === entry.id; }).folder = folderId;
+      else book.folders.find(function(folder) { return folder.id === entry.id; }).parent = folderId;
+      currentFolder = folderId;
+      expandFolderPath(folderId);
+      draggingEntry = null;
       persist(); renderPicker();
     };
   }
+
   function renderFolders() {
     var path = document.getElementById('folder-path');
-    var home = actionButton('Inicio', 'Carpeta principal: arrastra aquí un lienzo para sacarlo de una carpeta', function() { currentFolder = null; renderPicker(); });
+    var home = actionButton('⌂ Inicio · suelta aquí', 'Suelta aquí lienzos o carpetas para moverlos a la carpeta principal', function() { currentFolder = null; renderPicker(); });
+    home.className = 'root-drop-zone';
     dropTarget(home, null);
     path.replaceChildren(home);
     if(currentFolder && !book.folders.some(function(f) { return f.id === currentFolder; })) currentFolder = null;
@@ -343,7 +380,9 @@ window.addEventListener('load', function () {
           if(currentFolder === folder.id) currentFolder = folder.parent;
           collapsedFolders.delete(folder.id); persist(); renderPicker();
         }); remove.className = 'canvas-action canvas-delete';
-        row.append(open, rename, remove); dropTarget(row, folder.id); parentElement.appendChild(row);
+        row.append(open, rename, remove);
+        dragSource(row, open, 'folder', folder.id);
+        dropTarget(row, folder.id); parentElement.appendChild(row);
         if(isOpen) {
           var children = document.createElement('div'); children.className = 'folder-children';
           children.setAttribute('role', 'group'); children.setAttribute('aria-label', 'Contenido de ' + folder.name);
