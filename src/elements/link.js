@@ -99,12 +99,12 @@ Link.prototype.draw = function(c) {
 		var textAngle = (startAngle + endAngle) / 2 + stuff.isReversed * Math.PI;
 		var textX = stuff.circleX + stuff.circleRadius * Math.cos(textAngle);
 		var textY = stuff.circleY + stuff.circleRadius * Math.sin(textAngle);
-		drawText(c, this.text, textX, textY, textAngle, selectedObject == this, this.textBelow);
+		drawText(c, this.text, textX, textY, textAngle, selectedObject == this, this.textBelow, textAngle - stuff.reverseScale * Math.PI / 2);
 	} else {
 		var textX = (stuff.startX + stuff.endX) / 2;
 		var textY = (stuff.startY + stuff.endY) / 2;
 		var textAngle = Math.atan2(stuff.endX - stuff.startX, stuff.startY - stuff.endY);
-		drawText(c, this.text, textX, textY, textAngle + this.lineAngleAdjust, selectedObject == this, this.textBelow);
+		drawText(c, this.text, textX, textY, textAngle + this.lineAngleAdjust, selectedObject == this, this.textBelow, Math.atan2(stuff.endY - stuff.startY, stuff.endX - stuff.startX));
 	}
 };
 

@@ -50,7 +50,21 @@ function canvasHasFocus() {
 	return document.activeElement === canvas || (document.activeElement || document.body) === document.body;
 }
 
-function drawText(c, originalText, x, y, angleOrNull, isSelected, textBelow) {
+function drawMiniDirection(c, x, y, angle) {
+ var dx = Math.cos(angle), dy = Math.sin(angle);
+ var tipX = x + dx * 7, tipY = y + dy * 7;
+ c.beginPath();
+ c.moveTo(x - dx * 7, y - dy * 7);
+ c.lineTo(tipX, tipY);
+ c.stroke();
+ c.beginPath();
+ c.moveTo(tipX - dx * 5 - dy * 3, tipY - dy * 5 + dx * 3);
+ c.lineTo(tipX, tipY);
+ c.lineTo(tipX - dx * 5 + dy * 3, tipY - dy * 5 - dx * 3);
+ c.stroke();
+}
+
+function drawText(c, originalText, x, y, angleOrNull, isSelected, textBelow, directionAngle) {
  var rawLines = originalText.split('\n');
  var originals = rawLines.map(normalizeGreekShortcuts);
  var caret = isSelected ? getLabelCaret() : -1;
@@ -60,6 +74,8 @@ function drawText(c, originalText, x, y, angleOrNull, isSelected, textBelow) {
  c.font = '20px "Bahnschrift", "Segoe UI", sans-serif';
  var widths = lines.map(function(line) { return c.measureText(line).width; });
  var width = Math.max.apply(Math, widths);
+ var showDirection = directionAngle != null && originalText.trim().length > 0;
+ var groupWidth = width + (showDirection ? 28 : 0);
  var halfHeight = 10 + (lines.length - 1) * lineHeight / 2;
  // Offset the entire label perpendicular to the arrow, clear of its line.
  if(angleOrNull != null) {
@@ -70,10 +86,14 @@ function drawText(c, originalText, x, y, angleOrNull, isSelected, textBelow) {
    normalX = -normalX;
    normalY = -normalY;
   }
-  var distance = Math.abs(normalX) * width / 2 + Math.abs(normalY) * halfHeight + 8;
+  var distance = Math.abs(normalX) * groupWidth / 2 + Math.abs(normalY) * halfHeight + 8;
   var side = textBelow ? -1 : 1;
   x += side * normalX * distance;
   y += side * normalY * distance;
+ }
+ if(showDirection) {
+  x -= 14;
+  drawMiniDirection(c, x + width / 2 + 17, y, directionAngle);
  }
  for(var i = 0; i < lines.length; i++) {
   var lineY = y + (i - (lines.length - 1) / 2) * lineHeight;
