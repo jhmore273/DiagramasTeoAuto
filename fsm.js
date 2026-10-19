@@ -665,10 +665,6 @@ function drawText(c, originalText, x, y, angleOrNull, isSelected, textBelow) {
   x += side * normalX * distance;
   y += side * normalY * distance;
  }
- if(showDirection) {
-  x -= 14;
-  drawMiniDirection(c, x + width / 2 + 17, y, directionAngle);
- }
  for(var i = 0; i < lines.length; i++) {
   var lineY = y + (i - (lines.length - 1) / 2) * lineHeight;
   if('advancedFillText' in c) {
