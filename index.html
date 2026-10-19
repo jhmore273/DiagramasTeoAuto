@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Diagramas de Teoría de Autómatas</title>
-  <link rel="stylesheet" href="style.css?v=20261019-drag-fix">
-  <script src="fsm.js?v=20261019-drag-fix" defer></script>
-  <script src="workspace.js?v=20261019-drag-fix" defer></script>
-  <script src="notebooks.js?v=20261019-drag-fix" defer></script>
+  <link rel="stylesheet" href="style.css?v=20261019-label-direction">
+  <script src="fsm.js?v=20261019-label-direction" defer></script>
+  <script src="workspace.js?v=20261019-label-direction" defer></script>
+  <script src="notebooks.js?v=20261019-label-direction" defer></script>
 </head>
 <body>
   <header><h1>Diagramas de Teoría de Autómatas</h1><p>Finite State Machine Designer · tu espacio para diseñar autómatas</p></header>
@@ -29,7 +29,7 @@
         <button id="normal">Tamaño normal</button>
         <button id="fullscreen" aria-pressed="false">Pantalla completa</button>
         <button id="undo" disabled title="Deshacer (Ctrl + Z)">Deshacer</button>
-        <button id="label-side" disabled title="Selecciona una flecha y pulsa Alt + L">Texto arriba/abajo</button>
+        <button id="label-side" disabled title="Selecciona una flecha y pulsa Alt + L">Cambiar lado del texto</button>
         <button id="clear-all">Borrar todo</button>
         <span class="exports">Exportar: <button id="png">PNG</button><button id="svg">SVG</button><button id="latex">LaTeX</button></span>
       </nav>
@@ -64,7 +64,7 @@
         <li>Amplía el lienzo a por lo menos 2400 × 1600. Usa las barras de desplazamiento para recorrerlo. La vista se adapta a la ventana; el diagrama conserva sus coordenadas.</li>
         <li>Tamaño normal restaura la vista de 800 × 600. Las zonas adicionales siguen disponibles mediante desplazamiento. Esc sale de pantalla completa.</li>
         <li>Usa ← y → para mover el cursor dentro de las etiquetas, ↑ y ↓ para cambiar de línea e Inicio/Fin para ir al comienzo o final. Las letras griegas y los subíndices se recorren como un solo símbolo. Escribir o usar Retroceso modifica el texto en esa posición.</li>
-        <li>Selecciona una flecha y pulsa Alt + L o Texto arriba/abajo para alternar su etiqueta de lado. En el navegador, Ctrl + L abre la barra de direcciones. Enter crea una nueva línea en la etiqueta.</li>
+        <li>Selecciona una flecha y pulsa Alt + L o Cambiar lado del texto para alternar su etiqueta de lado: arriba/abajo en flechas horizontales e izquierda/derecha en las verticales. En el navegador, Ctrl + L abre la barra de direcciones. Enter crea una nueva línea en la etiqueta.</li>
         <li>Ctrl + Z o Deshacer revierte la última edición, incluido Borrar todo. Cada lienzo tiene su propio historial durante la sesión.</li>
         <li>El panel muestra carpetas y lienzos en forma de árbol. Pulsa una carpeta para expandirla o contraerla. Arrastra un lienzo o una subcarpeta sobre otra carpeta para moverlo. Para sacarlo a la carpeta principal, suéltalo en Inicio · suelta aquí. El contenido aparece indentado a la derecha.</li>
         <li>Exportar todo JSON guarda todos los lienzos y carpetas en un respaldo editable. Importar JSON añade ese respaldo conservando los lienzos existentes. + Carpeta crea carpetas o subcarpetas; Mover lienzo organiza el diagrama activo en la carpeta elegida.</li>

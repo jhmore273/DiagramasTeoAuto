@@ -61,9 +61,19 @@ function drawText(c, originalText, x, y, angleOrNull, isSelected, textBelow) {
  var widths = lines.map(function(line) { return c.measureText(line).width; });
  var width = Math.max.apply(Math, widths);
  var halfHeight = 10 + (lines.length - 1) * lineHeight / 2;
- // Keep every transition paragraph above its arrow anchor.
+ // Offset the entire label perpendicular to the arrow, clear of its line.
  if(angleOrNull != null) {
-  y += (textBelow ? 1 : -1) * (halfHeight + 8);
+  var normalX = Math.cos(angleOrNull);
+  var normalY = Math.sin(angleOrNull);
+  // Prefer above for horizontal arrows and left for vertical arrows.
+  if(normalY > 0.000001 || Math.abs(normalY) <= 0.000001 && normalX > 0) {
+   normalX = -normalX;
+   normalY = -normalY;
+  }
+  var distance = Math.abs(normalX) * width / 2 + Math.abs(normalY) * halfHeight + 8;
+  var side = textBelow ? -1 : 1;
+  x += side * normalX * distance;
+  y += side * normalY * distance;
  }
  for(var i = 0; i < lines.length; i++) {
   var lineY = y + (i - (lines.length - 1) / 2) * lineHeight;
