@@ -519,22 +519,34 @@ function saveAsPNG() {
 	// Match the dark on-screen drawing. CSS filters/backgrounds are not part of toDataURL.
 	// The unselected diagram is grayscale, so inversion also matches its hue-rotated view.
 	var pixels = drawingContext.getImageData(0, 0, drawing.width, drawing.height);
+	var minX = drawing.width, minY = drawing.height, maxX = -1, maxY = -1;
 	for(var i = 0; i < pixels.data.length; i += 4) {
+		// Find actual diagram pixels before adding the background or grid.
+		if(pixels.data[i + 3] > 0) {
+			var pixel = i / 4;
+			var pixelX = pixel % drawing.width;
+			var pixelY = Math.floor(pixel / drawing.width);
+			minX = Math.min(minX, pixelX); maxX = Math.max(maxX, pixelX);
+			minY = Math.min(minY, pixelY); maxY = Math.max(maxY, pixelY);
+		}
 		pixels.data[i] = 255 - pixels.data[i];
 		pixels.data[i + 1] = 255 - pixels.data[i + 1];
 		pixels.data[i + 2] = 255 - pixels.data[i + 2];
 	}
+	if(maxX < 0) { alert('El lienzo está vacío. Añade un estado antes de exportar.'); return; }
 	drawingContext.putImageData(pixels, 0, 0);
+	var margin = 24;
+	var cropX = minX - margin, cropY = minY - margin;
 	var screenshot = document.createElement('canvas');
-	screenshot.width = canvas.width;
-	screenshot.height = canvas.height;
+	screenshot.width = maxX - minX + 1 + margin * 2;
+	screenshot.height = maxY - minY + 1 + margin * 2;
 	var context = screenshot.getContext('2d');
 	context.fillStyle = '#000000';
 	context.fillRect(0, 0, screenshot.width, screenshot.height);
 	context.fillStyle = '#212121';
-	for(var x = 0; x < screenshot.width; x += 24) context.fillRect(x, 0, 1, screenshot.height);
-	for(var y = 0; y < screenshot.height; y += 24) context.fillRect(0, y, screenshot.width, 1);
-	context.drawImage(drawing, 0, 0);
+	for(var x = ((-cropX % 24) + 24) % 24; x < screenshot.width; x += 24) context.fillRect(x, 0, 1, screenshot.height);
+	for(var y = ((-cropY % 24) + 24) % 24; y < screenshot.height; y += 24) context.fillRect(0, y, screenshot.width, 1);
+	context.drawImage(drawing, -cropX, -cropY);
 	screenshot.toBlob(function(blob) {
 		if(!blob) { alert('No se pudo generar el PNG. Inténtalo de nuevo.'); return; }
 		var url = URL.createObjectURL(blob);
