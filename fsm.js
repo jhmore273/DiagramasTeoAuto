@@ -1091,16 +1091,51 @@ function downloadExport(text, mime, extension, filename) {
 }
 
 function saveAsPNG() {
+	var filename = getExportFilename('png');
+	var drawing = document.createElement('canvas');
+	drawing.width = canvas.width;
+	drawing.height = canvas.height;
+	var drawingContext = drawing.getContext('2d');
 	var oldSelectedObject = selectedObject;
-	selectedObject = null;
-	drawUsing(canvas.getContext('2d'));
-	selectedObject = oldSelectedObject;
-	var pngData = canvas.toDataURL('image/png');
-	var download = document.createElement('a');
-	download.href = pngData;
-	download.download = getExportFilename('png');
-	download.click();
-	draw();
+	var oldCurrentLink = currentLink;
+	try {
+		selectedObject = null;
+		currentLink = null;
+		drawUsing(drawingContext);
+	} finally {
+		selectedObject = oldSelectedObject;
+		currentLink = oldCurrentLink;
+	}
+	// Match the dark on-screen drawing. CSS filters/backgrounds are not part of toDataURL.
+	// The unselected diagram is grayscale, so inversion also matches its hue-rotated view.
+	var pixels = drawingContext.getImageData(0, 0, drawing.width, drawing.height);
+	for(var i = 0; i < pixels.data.length; i += 4) {
+		pixels.data[i] = 255 - pixels.data[i];
+		pixels.data[i + 1] = 255 - pixels.data[i + 1];
+		pixels.data[i + 2] = 255 - pixels.data[i + 2];
+	}
+	drawingContext.putImageData(pixels, 0, 0);
+	var screenshot = document.createElement('canvas');
+	screenshot.width = canvas.width;
+	screenshot.height = canvas.height;
+	var context = screenshot.getContext('2d');
+	context.fillStyle = '#000000';
+	context.fillRect(0, 0, screenshot.width, screenshot.height);
+	context.fillStyle = '#212121';
+	for(var x = 0; x < screenshot.width; x += 24) context.fillRect(x, 0, 1, screenshot.height);
+	for(var y = 0; y < screenshot.height; y += 24) context.fillRect(0, y, screenshot.width, 1);
+	context.drawImage(drawing, 0, 0);
+	screenshot.toBlob(function(blob) {
+		if(!blob) { alert('No se pudo generar el PNG. Inténtalo de nuevo.'); return; }
+		var url = URL.createObjectURL(blob);
+		var download = document.createElement('a');
+		download.href = url;
+		download.download = filename;
+		document.body.appendChild(download);
+		download.click();
+		download.remove();
+		setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
+	}, 'image/png');
 }
 
 function saveAsSVG() {
